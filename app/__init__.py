@@ -61,7 +61,10 @@ def polls():
 
 @app.route('/poll/<poll_id>')
 def poll(poll_id):
-    return 'Get this poll'
+    result = db.session.query(Poll).filter_by(id=poll_id)
+    if not result.count():
+        return dict(error='No poll with that id'), 404
+    return jsonify(result[0].serialize)
 
 
 @app.route('/poll/<poll_id>/vote', methods=['GET', 'POST'])

@@ -53,3 +53,22 @@ def test_list_polls(client):
     r = client.get('/poll')
     assert 200 == r.status_code
     assert 5 == len(r.get_json())
+
+
+def test_get_poll_that_does_not_exist(client):
+    r = client.get('/poll/1000')
+    assert 404, r.status_code
+
+
+def test_get_poll(client):
+    data = {
+        'name': 'My test Poll',
+        'description': 'test to create poll'
+    }
+    r = client.post('/poll', json=data)
+    assert 201 == r.status_code
+
+    poll_id = r.get_json()['id']
+    r = client.get(f'/poll/{poll_id}')
+    assert 200 == r.status_code
+    assert 'My test Poll' == r.get_json()['name']
