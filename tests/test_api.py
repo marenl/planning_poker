@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from app import app, init_db
+from app import app, db
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def client():
 
     with app.test_client() as client:
         with app.app_context():
-            init_db()
+            db.create_all()
         yield client
 
     os.close(db_fd)
