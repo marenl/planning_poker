@@ -3,8 +3,7 @@ import tempfile
 
 import pytest
 
-from app import app
-from db import init_db
+from app import app, init_db
 
 
 @pytest.fixture
@@ -22,8 +21,35 @@ def client():
     os.unlink(tmp_file)
 
 
-def test_empty_db(client):
+def test_get_empty_polls(client):
     """Start with a blank database."""
 
-    rv = client.get('/')
-    assert b'Hello, World!' in rv.data
+    r = client.get('/poll')
+    assert 200 == r.status_code
+    assert [] == r.get_json()
+
+
+def test_create_poll(client):
+
+    r = client.post('/poll')
+    assert 400 == r.status_code
+    assert 'Name must be specified' == r.get_json()['error']
+
+    data = {
+        'name': 'Test Poll',
+        'description': 'test to create poll'
+    }
+    r = client.post('/poll', json=data)
+    assert 201 == r.status_code
+    assert 'Test Poll' == r.get_json()['name']
+
+
+def test_list_polls(client):
+    for i in range(5):
+        data = dict(name=f'Poll{i}')
+        r = client.post('/poll', json=data)
+        assert 201 == r.status_code
+
+    r = client.get('/poll')
+    assert 200 == r.status_code
+    assert 5 == len(r.get_json())
