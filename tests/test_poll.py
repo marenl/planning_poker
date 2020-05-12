@@ -72,3 +72,49 @@ def test_get_poll(client):
     r = client.get(f'/poll/{poll_id}')
     assert 200 == r.status_code
     assert 'My test Poll' == r.get_json()['name']
+
+
+def test_get_vote_for_non_existing_poll(client):
+    r = client.get('/poll/1000/vote')
+    assert 404 == r.status_code
+
+
+def test_poll_vote_flow(client):
+    # Create poll
+    r = client.post('/poll', json=dict(name='My poll'))
+    assert 201 == r.status_code
+    poll_id = r.get_json()['id']
+
+    # Get votes
+    r = client.get(f'/poll/{poll_id}/vote')
+    assert 200 == r.status_code
+    assert [] == r.get_json()
+
+    # Try to create with missing or wrong data
+    r = client.post(f'/poll/{poll_id}/vote')
+    assert 400 == r.status_code
+    assert 'Voter and points must be specified' == r.get_json()['error']
+
+    data = {
+        'voter': 'Maren',
+        'points': 'foo'
+    }
+    r = client.post(f'/poll/{poll_id}/vote', json=data)
+    assert 400 == r.status_code
+    assert 'Points are not in the correct format' == r.get_json()['error']
+
+    # Create a vote
+    data['points'] = '1/2'
+    r = client.post(f'/poll/{poll_id}/vote', json=data)
+    assert 201 == r.status_code
+    assert 'Maren' == r.get_json()['voter']
+
+    # Create another
+    data['voter'] = 'Pelle'
+    r = client.post(f'/poll/{poll_id}/vote', json=data)
+    assert 201 == r.status_code
+
+    # List votes
+    r = client.get(f'/poll/{poll_id}/vote')
+    assert 200 == r.status_code
+    assert 2 == len(r.get_json())

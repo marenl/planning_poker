@@ -43,6 +43,14 @@ class Vote(db.Model):
     poll_id = db.Column(db.Integer, db.ForeignKey('poll.id'), nullable=False)
     poll = db.relationship('Poll', backref=db.backref('votes', lazy=True))
 
+    @property
+    def serialize(self):
+        return dict(
+            id=self.id,
+            voter=self.voter,
+            points=self.points,
+        )
+
 
 @app.route('/poll', methods=['GET', 'POST'])
 def polls():
@@ -69,4 +77,20 @@ def poll(poll_id):
 
 @app.route('/poll/<poll_id>/vote', methods=['GET', 'POST'])
 def vote(poll_id):
-    return 'Votes for this poll'
+    result = db.session.query(Poll).filter_by(id=poll_id)
+    if not result.count():
+        return dict(error='No poll with that id'), 404
+
+    if request.method == 'POST':
+        data = request.get_json()
+        if not data or not data['voter'] or not data['points']:
+            return dict(error='Voter and points must be specified'), 400
+        if data['points'] not in POINTS_CHOICES:
+            return dict(error='Points are not in the correct format'), 400
+        new_vote = Vote(voter=data['voter'], points=data['points'], poll_id=poll_id)
+        db.session.add(new_vote)
+        db.session.commit()
+        return jsonify(new_vote.serialize), 201
+    else:
+        result = db.session.query(Vote).filter_by(poll_id=poll_id)
+        return jsonify([v.serialize for v in result])
