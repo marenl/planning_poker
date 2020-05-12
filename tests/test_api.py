@@ -104,7 +104,7 @@ def test_poll_vote_flow(client):
     assert 201 == r.status_code
     poll_id = r.get_json()['id']
 
-    # Get votes
+    # List no votes
     r = client.get(f'/poll/{poll_id}/vote')
     assert 200 == r.status_code
     assert [] == r.get_json()
@@ -127,3 +127,30 @@ def test_poll_vote_flow(client):
     r = client.get(f'/poll/{poll_id}/vote')
     assert 200 == r.status_code
     assert 2 == len(r.get_json())
+
+
+def test_update_vote_if_already_exists(client):
+    # Create poll
+    r = client.post('/poll', json=dict(name='My poll'))
+    assert 201 == r.status_code
+    poll_id = r.get_json()['id']
+
+    # Create a vote
+    data = {
+        'voter': 'Kalle',
+        'points': '3'
+    }
+    r = client.post(f'/poll/{poll_id}/vote', json=data)
+    assert 201 == r.status_code
+
+    # Update the vote
+    data['points'] = '2'
+    r = client.post(f'/poll/{poll_id}/vote', json=data)
+    assert 200 == r.status_code
+
+    # Check that there is still just one vote
+    # List votes
+    r = client.get(f'/poll/{poll_id}/vote')
+    assert 200 == r.status_code
+    assert 1 == len(r.get_json())
+    assert '2' == r.get_json()[0]['points']

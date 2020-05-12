@@ -53,7 +53,7 @@ class Vote(db.Model):
 
 
 @app.route('/poll', methods=['GET', 'POST'])
-def polls():
+def api_polls():
     if request.method == 'POST':
         data = request.get_json()
         if not data or not data['name']:
@@ -68,7 +68,7 @@ def polls():
 
 
 @app.route('/poll/<poll_id>')
-def poll(poll_id):
+def api_poll(poll_id):
     result = db.session.query(Poll).filter_by(id=poll_id)
     if not result.count():
         return dict(error='No poll with that id'), 404
@@ -76,7 +76,7 @@ def poll(poll_id):
 
 
 @app.route('/poll/<poll_id>/vote', methods=['GET', 'POST'])
-def vote(poll_id):
+def api_vote(poll_id):
     result = db.session.query(Poll).filter_by(id=poll_id)
     if not result.count():
         return dict(error='No poll with that id'), 404
@@ -87,10 +87,20 @@ def vote(poll_id):
             return dict(error='Voter and points must be specified'), 400
         if data['points'] not in POINTS_CHOICES:
             return dict(error='Points are not in the correct format'), 400
-        new_vote = Vote(voter=data['voter'], points=data['points'], poll_id=poll_id)
-        db.session.add(new_vote)
+
+        # Check if the vote already exists first
+        result = db.session.query(Vote).filter_by(voter=data['voter'], poll_id=poll_id)
+        if result.count():
+            vote = result[0]
+            vote.points = data['points']
+            status = 200
+        else:
+            vote = Vote(voter=data['voter'], points=data['points'], poll_id=poll_id)
+            status = 201
+            db.session.add(vote)
+
         db.session.commit()
-        return jsonify(new_vote.serialize), 201
+        return jsonify(vote.serialize), status
     else:
         result = db.session.query(Vote).filter_by(poll_id=poll_id)
         return jsonify([v.serialize for v in result])
