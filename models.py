@@ -1,9 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
-
-from app import app
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-db = SQLAlchemy(app)
+from db import db
 
 POINTS_CHOICES = ['0', '1/2', '1', '2', '3', '5', '8', '13']
 
