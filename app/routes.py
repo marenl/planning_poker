@@ -58,5 +58,5 @@ def api_vote(poll_id):
         db.session.commit()
         return jsonify(vote.serialize), status
     else:
-        result = db.session.query(Vote).filter_by(poll_id=poll_id)
+        result = db.session.query(Vote).filter_by(poll_id=poll_id).order_by(Vote.id.desc())
         return jsonify([v.serialize for v in result])
