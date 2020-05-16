@@ -27,7 +27,7 @@ def api_polls():
 def api_poll(poll_id):
     result = db.session.query(Poll).filter_by(id=poll_id)
     if not result.count():
-        return dict(error='No poll with that id'), 404
+        return dict(error='This is not the poll you are looking for..'), 404
     return jsonify(result[0].serialize)
 
 
@@ -35,7 +35,7 @@ def api_poll(poll_id):
 def api_vote(poll_id):
     result = db.session.query(Poll).filter_by(id=poll_id)
     if not result.count():
-        return dict(error='No poll with that id'), 404
+        return dict(error='This is not the poll you are looking for..'), 404
 
     if request.method == 'POST':
         data = request.get_json()
